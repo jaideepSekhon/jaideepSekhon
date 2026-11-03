@@ -32,11 +32,18 @@ jobs:
           node-version: '22'
       - name: Check stats generation
         run: node --test scripts/update-stats.test.mjs
+      - name: Apply profile edits using saved language data
+        run: node scripts/render-profile.mjs
       - name: Generate stats from GitHub
+        id: stats
+        continue-on-error: true
         run: node scripts/update-stats.mjs
         env:
           GITHUB_TOKEN: ${{ github.token }}
           PROFILE_STATS_TOKEN: ${{ secrets.PROFILE_STATS_TOKEN }}
+      - name: Report saved stats fallback
+        if: steps.stats.outcome == 'failure'
+        run: echo "::warning::Language refresh failed. Profile edits will still be saved using the last successful language data. Check token access and API limits."
       - name: Save updated card
         run: |
           git config user.name "github-actions[bot]"

@@ -2,8 +2,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { collectStats } from './update-stats.mjs';
 import { renderTerminal, renderLinks } from './render-profile.mjs';
-import { readFile } from 'node:fs/promises';
-const profile=JSON.parse(await readFile(new URL('../profile.json',import.meta.url),'utf8'));
+// Tests use a fixed fixture so users can freely delete fields from profile.json.
+const profile={name:'Jaideep Singh Sekhon',username:'jaideepSekhon',host:'jaideepsekhon',
+  focus:'Backend development',description:'Building APIs.',toolkit:['Java'],tools:['Git'],
+  learning:['Python'],email:'example@example.com',links:{portfolio:'',x:'',linkedin:''}};
 const renderStats=(_repos,languages,updated,includePrivate=false)=>renderTerminal({profile,snapshot:{languages,updated,includePrivate},tigerData:''});
 
 const repo = (id, name, extra = {}) => ({
@@ -60,17 +62,33 @@ test('terminal renders language percentages, grouping, escaping, contacts and no
   assert.match(links,/mailto:/);
 });
 
-test('renderLinks tolerates missing profile links', () => {
-  const links = renderLinks({...profile, links: undefined});
-  assert.match(links,/Portfolio: add your URL in `profile.json`/);
-  assert.match(links,/X: add your URL in `profile.json`/);
-  assert.match(links,/LinkedIn: add your URL in `profile.json`/);
-});
-
 test('failed private requests abort without leaking private paths or credentials', async () => {
   let call = 0;
   await assert.rejects(collectStats({owner:'jaideepSekhon', privateToken:'do-not-log', fetchImpl:async()=>{
     call++;
     return call === 1 ? {ok:true,json:async()=>[]} : {ok:false,status:403};
   }}), (error) => /403/.test(error.message) && !/do-not-log|user\/repos/.test(error.message));
+});
+
+test('deleted profile fields disappear from both terminal variants and link page', () => {
+  const edited={...profile};
+  delete edited.links;
+  delete edited.tools;
+  delete edited.learning;
+  delete edited.email;
+  for (const mobile of [false,true]) {
+    const svg=renderTerminal({profile:edited,snapshot:{languages:{Java:1},updated:'test'},tigerData:'',mobile});
+    assert.doesNotMatch(svg,/Portfolio|LinkedIn|\[add URL\]|Learning|Mail/);
+    assert.match(svg,/Jaideep/);
+  }
+  assert.doesNotMatch(renderLinks(edited),/Portfolio|LinkedIn|mailto:/);
+  const oneLink={...profile,links:{portfolio:'https://example.com'}};
+  assert.doesNotMatch(renderLinks(oneLink),/LinkedIn|\- X:/);
+});
+
+test('section switches hide complete sections without depending on user configuration', () => {
+  const edited={...profile,sections:{contacts:false,toolkit:false,languages:false}};
+  const svg=renderTerminal({profile:edited,snapshot:{languages:{Python:1},updated:'test'},tigerData:''});
+  assert.doesNotMatch(svg,/contacts|toolkit|languages|Python|Portfolio/);
+  assert.doesNotMatch(renderLinks(edited),/https:|mailto:/);
 });

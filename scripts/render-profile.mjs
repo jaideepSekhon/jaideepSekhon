@@ -33,7 +33,38 @@ function wrap(value, limit) {
   return lines;
 }
 
+function normalizeProfile(profile) {
+  return {
+    ...profile,
+    name: profile.name || profile.username || 'Developer',
+    username: profile.username || 'developer',
+    host: profile.host || profile.username || 'localhost',
+    focus: profile.focus || '',
+    description: profile.description || '',
+    toolkit: profile.toolkit || [],
+    tools: profile.tools || [],
+    learning: profile.learning || [],
+    sections: profile.sections || {},
+  };
+}
+
+function contactEntries(profile) {
+  if (profile.sections?.contacts === false) return [];
+  const entries = [];
+  if (profile.username) entries.push(['GitHub',`https://github.com/${encodeURIComponent(profile.username)}`]);
+  for (const [key,label] of [['portfolio','Portfolio'],['x','X'],['linkedin','LinkedIn']]) {
+    // Deleted keys disappear; keys explicitly kept empty remain editable placeholders.
+    if (Object.hasOwn(profile.links || {},key)) entries.push([label,profile.links[key]]);
+  }
+  if (profile.email) entries.push(['Mail',`mailto:${profile.email}`]);
+  return entries;
+}
+
 export function renderTerminal({profile, snapshot, tigerData, mobile=false}) {
+  const entries = contactEntries(profile);
+  profile = normalizeProfile(profile);
+  const showToolkit = profile.sections.toolkit !== false;
+  const showLanguages = profile.sections.languages !== false;
   const width = mobile ? 420 : 840;
   const shares = languageShares(snapshot.languages);
   const extra = Math.max(0,Math.ceil(shares.length/2)-3)*22;
@@ -56,46 +87,46 @@ export function renderTerminal({profile, snapshot, tigerData, mobile=false}) {
     wrap(profile.description,28).slice(0,2).forEach((value,i)=>{
       body += text(value,20,183+i*16,'muted',11);
     });
-    body += text('toolkit',20,216,'key',12);
-    body += text(profile.toolkit.slice(0,2).join(' / '),20,237,'',12);
-    body += text(profile.toolkit.slice(2).join(' / '),20,258,'',12);
-    body += line('Tools',profile.tools.join(' / '),301);
-    body += line('Learning',profile.learning.slice(0,2).join(' / '),324);
-    body += line('',profile.learning.slice(2).join(' / '),345);
+    if (showToolkit && profile.toolkit.length) {
+      body += text('toolkit',20,216,'key',12);
+      body += text(profile.toolkit.slice(0,2).join(' / '),20,237,'',12);
+      body += text(profile.toolkit.slice(2).join(' / '),20,258,'',12);
+    }
+    if (showToolkit && profile.tools.length) body += line('Tools',profile.tools.join(' / '),301);
+    if (showToolkit && profile.learning.length) {
+      body += line('Learning',profile.learning.slice(0,2).join(' / '),324);
+      body += line('',profile.learning.slice(2).join(' / '),345);
+    }
   } else {
     body += text(profile.name,x,112,'strong',22);
     body += text(profile.focus,x,138,'key',14);
     body += text(profile.description,x,165,'muted',13);
-    body += section('toolkit',195);
-    body += line('Stack',profile.toolkit.join(' / '),222);
-    body += line('Tools',profile.tools.join(' / '),246);
-    body += line('Learning',profile.learning.slice(0,2).join(' / '),270);
-    body += line('',profile.learning.slice(2).join(' / '),292);
+    if (showToolkit && (profile.toolkit.length || profile.tools.length || profile.learning.length)) body += section('toolkit',195);
+    if (showToolkit && profile.toolkit.length) body += line('Stack',profile.toolkit.join(' / '),222);
+    if (showToolkit && profile.tools.length) body += line('Tools',profile.tools.join(' / '),246);
+    if (showToolkit && profile.learning.length) {
+      body += line('Learning',profile.learning.slice(0,2).join(' / '),270);
+      body += line('',profile.learning.slice(2).join(' / '),292);
+    }
   }
   const languageY = mobile?379:324;
-  body += section('languages',languageY);
-  shares.forEach(([name,percent],i)=>{
+  if (showLanguages) body += section('languages',languageY);
+  (showLanguages ? shares : []).forEach(([name,percent],i)=>{
     const px = x+(i%2)*(mobile?196:246), py = languageY+26+Math.floor(i/2)*22;
     body += text(name,px,py,'',mobile?12:13);
     body += text(percent,px+(mobile?178:220),py,'key',mobile?12:13).replace('<text ', '<text text-anchor="end" ');
   });
-  if (!shares.length) body += text('No language data yet.',x,languageY+26,'muted',13);
+  if (showLanguages && !shares.length) body += text('No language data yet.',x,languageY+26,'muted',13);
   const contactY = (mobile?489:429)+extra;
-  body += section('contacts',contactY);
-  const links = profile.links ?? {};
-  const contacts = [
-    ['GitHub',`@${profile.username}`],
-    ['Portfolio',safeUrl(links.portfolio)?'open ↗':'[add URL]'],
-    ['X',safeUrl(links.x)?'open ↗':'[add URL]'],
-    ['LinkedIn',safeUrl(links.linkedin)?'open ↗':'[add URL]'],
-    ['Mail',profile.email],
-  ];
+  if (entries.length) body += section('contacts',contactY);
+  const contacts = entries.map(([label,url])=>[label,
+    label==='GitHub' ? `@${profile.username}` : label==='Mail' ? profile.email : safeUrl(url)?'open ↗':'[add URL]']);
   if (mobile) {
     contacts.forEach(([key,value],i)=>{body+=line(key,value,contactY+26+i*22);});
   } else {
-    body += line('GitHub',`@${profile.username}`,contactY+25);
-    body += line('Mail',profile.email,contactY+47);
-    contacts.slice(1,4).forEach(([key,value],i)=>{
+    const primary = contacts.filter(([key])=>key==='GitHub' || key==='Mail');
+    primary.forEach(([key,value],i)=>{body += line(key,value,contactY+25+i*22);});
+    contacts.filter(([key])=>key!=='GitHub' && key!=='Mail').forEach(([key,value],i)=>{
       body+=text(`${key}: ${value}`,x+i*157,contactY+72,'',12);
     });
   }
@@ -105,19 +136,14 @@ export function renderTerminal({profile, snapshot, tigerData, mobile=false}) {
   }
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="title desc">
 <title id="title">${escape(profile.name)} — terminal profile</title>
-<desc id="desc">${escape(profile.description)} Toolkit: ${escape(profile.toolkit.join(', '))}. Languages by code bytes: ${shares.map(([name,percent])=>`${escape(name)} ${percent}`).join(', ')}. ${snapshot.includePrivate?'Public and selected private':'Original public'} repositories. Checked ${escape(snapshot.updated)}. Click the terminal in the README to open profile links.</desc>
+<desc id="desc">${escape(profile.description)} ${showToolkit ? `Toolkit: ${escape(profile.toolkit.join(', '))}.` : ''} ${showLanguages ? `Languages by code bytes: ${shares.map(([name,percent])=>`${escape(name)} ${percent}`).join(', ')}. ${snapshot.includePrivate?'Public and selected private':'Original public'} repositories. Checked ${escape(snapshot.updated)}.` : ''} Click the terminal in the README to open profile links.</desc>
 <style>text{font-family:Consolas,Menlo,ui-monospace,monospace;fill:#d0e4c4;white-space:pre}.key,.prompt{fill:#9cda7d}.muted{fill:#869b81}.strong{fill:#e2f0da;font-weight:600}</style>
 ${body}</svg>\n`;
 }
 
 export function renderLinks(profile) {
-  const links = profile.links ?? {};
-  const entries = [
-    ['GitHub',`https://github.com/${encodeURIComponent(profile.username)}`],
-    ['Portfolio',links.portfolio],['X',links.x],['LinkedIn',links.linkedin],
-    ['Email',`mailto:${profile.email}`],
-  ];
-  return `# ${profile.name.replace(/[\r\n]/g,' ')} · links\n\n`+entries.map(([label,url])=>
+  const entries = contactEntries(profile);
+  return `# ${normalizeProfile(profile).name.replace(/[\r\n]/g,' ')} · links\n\n`+entries.map(([label,url])=>
     safeUrl(url)?`- [${label}](<${safeUrl(url).replaceAll('>','%3E')}>)`:`- ${label}: add your URL in \`profile.json\``).join('\n')+'\n';
 }
 
