@@ -60,6 +60,13 @@ test('terminal renders language percentages, grouping, escaping, contacts and no
   assert.match(links,/mailto:/);
 });
 
+test('renderLinks tolerates missing profile links', () => {
+  const links = renderLinks({...profile, links: undefined});
+  assert.match(links,/Portfolio: add your URL in `profile.json`/);
+  assert.match(links,/X: add your URL in `profile.json`/);
+  assert.match(links,/LinkedIn: add your URL in `profile.json`/);
+});
+
 test('failed private requests abort without leaking private paths or credentials', async () => {
   let call = 0;
   await assert.rejects(collectStats({owner:'jaideepSekhon', privateToken:'do-not-log', fetchImpl:async()=>{
