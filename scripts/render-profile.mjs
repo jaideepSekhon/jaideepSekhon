@@ -82,11 +82,12 @@ export function renderTerminal({profile, snapshot, tigerData, mobile=false}) {
   if (!shares.length) body += text('No language data yet.',x,languageY+26,'muted',13);
   const contactY = (mobile?489:429)+extra;
   body += section('contacts',contactY);
+  const links = profile.links ?? {};
   const contacts = [
     ['GitHub',`@${profile.username}`],
-    ['Portfolio',safeUrl(profile.links.portfolio)?'open ↗':'[add URL]'],
-    ['X',safeUrl(profile.links.x)?'open ↗':'[add URL]'],
-    ['LinkedIn',safeUrl(profile.links.linkedin)?'open ↗':'[add URL]'],
+    ['Portfolio',safeUrl(links.portfolio)?'open ↗':'[add URL]'],
+    ['X',safeUrl(links.x)?'open ↗':'[add URL]'],
+    ['LinkedIn',safeUrl(links.linkedin)?'open ↗':'[add URL]'],
     ['Mail',profile.email],
   ];
   if (mobile) {
@@ -110,9 +111,10 @@ ${body}</svg>\n`;
 }
 
 export function renderLinks(profile) {
+  const links = profile.links ?? {};
   const entries = [
     ['GitHub',`https://github.com/${encodeURIComponent(profile.username)}`],
-    ['Portfolio',profile.links.portfolio],['X',profile.links.x],['LinkedIn',profile.links.linkedin],
+    ['Portfolio',links.portfolio],['X',links.x],['LinkedIn',links.linkedin],
     ['Email',`mailto:${profile.email}`],
   ];
   return `# ${profile.name.replace(/[\r\n]/g,' ')} · links\n\n`+entries.map(([label,url])=>
