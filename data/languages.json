@@ -1,12 +1,13 @@
 {
   "languages": {
-    "Java": 413.4182895091089,
-    "JavaScript": 88.76604146100694,
-    "HTML": 29.406802476891308,
-    "CSS": 27.389392443686624,
-    "Dockerfile": 1.019474109306261
+    "Java": 199397,
+    "JavaScript": 42811,
+    "CSS": 13210,
+    "Dockerfile": 490,
+    "HTML": 14182,
+    "Python": 1176
   },
-  "updated": "2026-11-03 (cached)",
+  "updated": "2026-11-03 09:17 UTC",
   "includePrivate": false,
-  "basis": "cached chart proportions"
+  "basis": "github-code-bytes"
 }
