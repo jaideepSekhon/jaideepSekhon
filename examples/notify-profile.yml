@@ -1,0 +1,19 @@
+# Optional: copy into .github/workflows/notify-profile.yml in EACH source repo.
+# Add PROFILE_REFRESH_TOKEN there: a fine-grained token for your PROFILE repo,
+# with Actions: read and write. It does not need access to source code.
+name: Refresh my GitHub profile after a push
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Request a profile stats refresh
+        env:
+          GH_TOKEN: ${{ secrets.PROFILE_REFRESH_TOKEN }}
+        run: gh workflow run update-profile.yml --repo jaideepSekhon/jaideepSekhon

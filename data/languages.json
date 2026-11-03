@@ -1,0 +1,12 @@
+{
+  "languages": {
+    "Java": 413.4182895091089,
+    "JavaScript": 88.76604146100694,
+    "HTML": 29.406802476891308,
+    "CSS": 27.389392443686624,
+    "Dockerfile": 1.019474109306261
+  },
+  "updated": "2026-11-03 (cached)",
+  "includePrivate": false,
+  "basis": "cached chart proportions"
+}

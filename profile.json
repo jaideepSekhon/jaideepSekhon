@@ -1,0 +1,23 @@
+{
+  "name": "Jaideep Singh Sekhon",
+  "username": "jaideepSekhon",
+  "host": "jaideepsekhon",
+  "focus": "Backend development",
+  "description": "Building APIs and database logic.",
+  "toolkit": [
+    "Java",
+    "Spring Boot",
+    "MySQL"
+  ],
+  "tools": [
+    "Git",
+    "GitHub",
+    "IntelliJ IDEA"
+  ],
+  "learning": [
+    "Python",
+    "LangChain",
+    "Red Hat Linux"
+  ],
+  "email": "jss3392192@gmail.com"
+}
